@@ -1,44 +1,22 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import Homepage from "./component/HomePage";
+import FarmerDashboard from "./component/Farmer/FarmerDashboard ";
+import DistributorDashboard from "./component/Distributor/DistributorDashboard ";
+import ConsumerDashboard from "./component/Consumer/ConsumerDashboard";
+import AuthRedirect from "./component/Auth/AuthRedirect";
+import SetRole from "./component/Auth/SetRole";
 
-import { Header } from "./components/Layout/Header";
-import { FarmerPortal } from "./components/Farmer/FarmerPortal";
-import { DistributorPortal } from "./components/Distributor/DistributorPortal";
-import { ConsumerPortal } from "./components/Consumer/ConsumerPortal";
-import { Login } from "./components/Auth/Login";
-import  Home  from "./components/Layout/Home";
-import  Profile  from "./components/Auth/Profile";
 import "./App.css";
 
-
-function App() {
+export default function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header stays constant across pages */}
-        <Header />
-
-        <main className="py-8">
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-
-            {/* Profile */}
-            <Route path="/profile" element={<Profile />} />
-
-            {/* Portals (role-based) */}
-            <Route path="/farmer" element={<FarmerPortal />} />
-            <Route path="/distributor" element={<DistributorPortal />} />
-            <Route path="/consumer" element={<ConsumerPortal />} />
-
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <Routes>
+      <Route path="/" element={<Homepage />} />
+      <Route path="/set-role" element={<SetRole />} />
+      <Route path="/auth-redirect" element={<AuthRedirect />} />
+      <Route path="/farmer-dashboard" element={<FarmerDashboard />} />
+      <Route path="/distributor-dashboard" element={<DistributorDashboard />} />
+      <Route path="/consumer-dashboard" element={<ConsumerDashboard />} />
+    </Routes>
   );
 }
-
-export default App;
