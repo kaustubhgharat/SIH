@@ -1,7 +1,8 @@
 import NavbarPage from "../Navbar/NavbarPage";
-
+import FooterPage from "../Footer/FooterPage";
 const DistributorDashboard = () => {
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       <NavbarPage />
       <div className="max-w-4xl mx-auto py-20 px-6 text-center">
@@ -14,6 +15,9 @@ const DistributorDashboard = () => {
         </p>
       </div>
     </div>
+    <FooterPage/>
+    </>
+    
   );
 };
 

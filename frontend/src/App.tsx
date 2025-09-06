@@ -6,6 +6,12 @@ import ConsumerDashboard from "./component/Consumer/ConsumerDashboard";
 import AuthRedirect from "./component/Auth/AuthRedirect";
 import SetRole from "./component/Auth/SetRole";
 
+import AddProduct from "./component/Navbar/AddProduct";
+import Inventory from "./component/Navbar/Inventory";
+import Transaction from "./component/Navbar/Transaction";
+import Analysis from "./component/Navbar/Analysis";
+import Feedback from "./component/Navbar/Feedback";
+
 import "./App.css";
 
 export default function App() {
@@ -17,6 +23,12 @@ export default function App() {
       <Route path="/farmer-dashboard" element={<FarmerDashboard />} />
       <Route path="/distributor-dashboard" element={<DistributorDashboard />} />
       <Route path="/consumer-dashboard" element={<ConsumerDashboard />} />
+      {/* Navbar pages */}
+      <Route path="/add-product" element={<AddProduct />} />
+      <Route path="/inventory" element={<Inventory />} />
+      <Route path="/transaction" element={<Transaction />} />
+      <Route path="/analysis" element={<Analysis />} />
+      <Route path="/feedback" element={<Feedback />} />
     </Routes>
   );
 }

@@ -1,24 +1,40 @@
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function SetRole() {
   const { user } = useUser();
-  const { user: clerkUser } = useClerk();
   const navigate = useNavigate();
   const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSaveRole = async () => {
-    if (!role || !clerkUser) return;
-    // Clerk user metadata me save karo
-    await clerkUser.update({
-      unsafeMetadata: { role },
-    });
+  // ✅ Check if role already saved in localStorage
+  useEffect(() => {
+    if (user) {
+      const savedRole = localStorage.getItem(`role_${user.id}`);
+      if (savedRole) {
+        setRole(savedRole);
+        // Auto redirect agar role already hai
+        if (savedRole === "farmer") navigate("/farmer-dashboard");
+        if (savedRole === "distributor") navigate("/distributor-dashboard");
+        if (savedRole === "consumer") navigate("/consumer-dashboard");
+      }
+    }
+  }, [user, navigate]);
 
-    // role ke hisab se redirect
+  const handleSaveRole = () => {
+    if (!role || !user) return;
+    setLoading(true);
+
+    // ✅ Role save in localStorage
+    localStorage.setItem(`role_${user.id}`, role);
+
+    // ✅ Redirect
     if (role === "farmer") navigate("/farmer-dashboard");
     if (role === "distributor") navigate("/distributor-dashboard");
     if (role === "consumer") navigate("/consumer-dashboard");
+
+    setLoading(false);
   };
 
   return (
@@ -36,9 +52,10 @@ export default function SetRole() {
       </select>
       <button
         onClick={handleSaveRole}
-        className="px-6 py-2 bg-green-600 text-white rounded-lg"
+        disabled={loading}
+        className="px-6 py-2 bg-green-600 text-white rounded-lg disabled:bg-gray-400"
       >
-        Continue
+        {loading ? "Saving..." : "Continue"}
       </button>
     </div>
   );
