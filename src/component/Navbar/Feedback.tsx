@@ -1,10 +1,11 @@
-import  { useState } from "react";
+import { useState } from "react";
 import NavbarPage from "./NavbarPage";
 
 const Feedback = () => {
   const [feedback, setFeedback] = useState("");
 
-  const handleSubmit = (e) => {
+  // 👇 Form submit handler with type
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     alert("Thanks for your feedback!\n" + feedback);
     setFeedback("");
@@ -18,12 +19,17 @@ const Feedback = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <textarea
             value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+              setFeedback(e.target.value)
+            }
             placeholder="Enter your feedback ..."
             required
             className="w-full h-32 px-4 py-2 border rounded resize-none"
           />
-          <button type="submit" className="bg-green-700 text-white px-6 py-2 rounded hover:bg-green-800">
+          <button
+            type="submit"
+            className="bg-green-700 text-white px-6 py-2 rounded hover:bg-green-800"
+          >
             Submit
           </button>
         </form>
