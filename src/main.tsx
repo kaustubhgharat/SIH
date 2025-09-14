@@ -18,8 +18,8 @@ createRoot(document.getElementById("root")!).render(
       publishableKey={PUBLISHABLE_KEY}
       signInUrl="/"
       signUpUrl="/"
-      afterSignInUrl="/set-role" // 👈 login ke baad role choose
-      afterSignUpUrl="/set-role" // 👈 register ke turant baad role choose
+      afterSignInUrl="/" // 👈 login ke baad role choose
+      afterSignUpUrl="/" // 👈 register ke turant baad role choose
     >
       <BrowserRouter>
         <App />

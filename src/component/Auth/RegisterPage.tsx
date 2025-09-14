@@ -8,7 +8,7 @@ export default function RegisterPage() {
         routing="path"
         signInUrl="/login"
         appearance={{ elements: { formButtonPrimary: "bg-green-600 text-white" } }}
-        afterSignUpUrl="/set-role"  // register ke baad yaha bhej do
+        afterSignUpUrl="/"  // register ke baad yaha bhej do
       />
     </div>
   );
