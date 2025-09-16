@@ -1,21 +1,20 @@
+// src/component/Navbar/Analysis.tsx
 import React, { useState, useMemo } from "react";
 import type { FC } from "react";
 import {
-  AreaChart,
-  Area,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  CartesianGrid,
   BarChart,
   Bar,
-  
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  Legend,
+  PieChart,
+  Pie
 } from "recharts";
+import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import {
   Activity,
   Users,
@@ -24,12 +23,19 @@ import {
   ArrowUp,
   ArrowDown,
   BarChart3,
-  PieChart as PieIcon,
-  Loader2,
 } from "lucide-react";
 
-// --- TYPE DEFINITIONS ---
+// ------------------ TYPES ------------------
 type Timeframe = "7d" | "30d" | "90d";
+
+interface TransactionEntry {
+  date: string;
+  product: string;
+  quantity: number;
+  pricePerUnit: number;
+  revenue: number;
+}
+
 
 interface StatCardProps {
   title: string;
@@ -39,81 +45,82 @@ interface StatCardProps {
   color: { bg: string; text: string };
 }
 
-interface ChartCardProps {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-  isLoading: boolean;
+interface CustomTooltipProps {
+  active?: boolean;
+  // FIX: Replaced 'any' with a specific type for the recharts payload.
+  // This tooltip is used for the TransactionEntry chart.
+  payload?: { payload: TransactionEntry }[];
+  label?: string;
 }
 
-interface TransactionEntry {
-  date: string;
-  transactions: number;
+// FIX: Added a specific type for the map geography object to avoid 'any'.
+interface GeoObject {
+  rsmKey: string;
+  properties: {
+    NAME_1?: string;
+    [key: string]: any; // Allow other properties
+  };
 }
 
-interface ProductEntry {
-  name: string;
-  value: number;
-  revenue: number;
-  color: string;
-}
+// ------------------ DATA ------------------
+// Sample products
+const products = ["Onions", "Rice", "Wheat", "Potatoes", "Tomatoes"];
 
-// --- DATA GENERATION (More realistic and extensive) ---
-const generateDate = (daysAgo: number) => {
-  const date = new Date("2025-09-15T12:00:00Z");
-  date.setDate(date.getDate() - daysAgo);
-  return date;
+// Generate 90 days of personal transactions
+const transactionData: TransactionEntry[] = Array.from({ length: 90 }, (_, i) => {
+  const product = products[Math.floor(Math.random() * products.length)];
+  const quantity = Math.floor(Math.random() * 50) + 10;
+  const price = Math.floor(Math.random() * 500) + 50;
+  return {
+    date: new Date(Date.now() - (89 - i) * 24 * 60 * 60 * 1000).toLocaleDateString("en-IN", {
+      month: "short",
+      day: "numeric",
+    }),
+    product,
+    quantity,
+    pricePerUnit: price,
+    revenue: quantity * price,
+  };
+});
+// -----------------------------------
+// Per-product monthly comparison data
+// -----------------------------------
+const productsList = ["Rice", "Wheat", "Onions", "Potatoes", "Tomatoes"];
+
+// Calculate your average price/unit per product
+const personalAvgPrice = productsList.map((product) => {
+  const productTx = transactionData.filter(tx => tx.product === product);
+  const avg = productTx.length > 0
+    ? productTx.reduce((sum, tx) => sum + tx.pricePerUnit, 0) / productTx.length
+    : 0;
+  return { product, yourPrice: avg };
+});
+
+// Simulate other farmers’ average per product
+const areaAvgPrice = productsList.map((product) => {
+  const avg = Math.floor(Math.random() * 200) + 50; // mock area average
+  return { product, areaAvg: avg };
+});
+
+// Merge for chart
+const comparisonData = productsList.map((product) => {
+  const personal = personalAvgPrice.find(p => p.product === product)?.yourPrice || 0;
+  const area = areaAvgPrice.find(a => a.product === product)?.areaAvg || 0;
+  return { product, yourPrice: personal, areaAvg: area };
+});
+
+
+
+// Stats for quick overview
+const statsData: Record<Timeframe, Record<string, { value: number; prev: number }>> = {
+  "7d": { totalTransactions: { value: 345, prev: 328 }, activeFarmers: { value: 42, prev: 40 }, distributors: { value: 18, prev: 18 }, retailers: { value: 25, prev: 24 } },
+  "30d": { totalTransactions: { value: 1420, prev: 1350 }, activeFarmers: { value: 89, prev: 85 }, distributors: { value: 22, prev: 21 }, retailers: { value: 31, prev: 29 } },
+  "90d": { totalTransactions: { value: 4510, prev: 4200 }, activeFarmers: { value: 156, prev: 145 }, distributors: { value: 28, prev: 25 }, retailers: { value: 38, prev: 35 } },
 };
 
-const transactionData: TransactionEntry[] = Array.from({ length: 90 }, (_, i) => ({
-  date: generateDate(89 - i).toLocaleDateString("en-IN", {
-    month: "short",
-    day: "numeric",
-  }),
-  transactions:
-    20 +
-    Math.floor(Math.random() * 50) +
-    Math.floor(i / 7) * 2, // General upward trend
-}));
-
-const productDistribution: ProductEntry[] = [
-  { name: "Nashik Onions", value: 350, revenue: 1200000, color: "#22c55e" },
-  { name: "Basmati Rice", value: 450, revenue: 3500000, color: "#3b82f6" },
-  { name: "Punjab Wheat", value: 600, revenue: 2100000, color: "#f59e0b" },
-  { name: "Himalayan Potatoes", value: 250, revenue: 950000, color: "#ef4444" },
-  { name: "Organic Tomatoes", value: 150, revenue: 750000, color: "#8b5cf6" },
-];
-
-const statsData = {
-  "7d": {
-    totalTransactions: { value: 345, prev: 328 },
-    activeFarmers: { value: 42, prev: 40 },
-    distributors: { value: 18, prev: 18 },
-    retailers: { value: 25, prev: 24 },
-  },
-  "30d": {
-    totalTransactions: { value: 1420, prev: 1350 },
-    activeFarmers: { value: 89, prev: 85 },
-    distributors: { value: 22, prev: 21 },
-    retailers: { value: 31, prev: 29 },
-  },
-  "90d": {
-    totalTransactions: { value: 4510, prev: 4200 },
-    activeFarmers: { value: 156, prev: 145 },
-    distributors: { value: 28, prev: 25 },
-    retailers: { value: 38, prev: 35 },
-  },
-};
-
-// --- HELPER & REUSABLE COMPONENTS ---
-const StatCard: FC<StatCardProps> = ({
-  title,
-  value,
-  change,
-  icon: Icon,
-  color,
-}) => (
-  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between gap-2 transition-all hover:shadow-md hover:-translate-y-1">
+// ------------------ COMPONENTS ------------------
+const StatCard: FC<StatCardProps> = ({ title, value, change, icon: Icon, color }) => (
+  <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between gap-2">
     <div className="flex items-center gap-4">
       <div className={`p-3 rounded-full ${color.bg}`}>
         <Icon size={24} className={color.text} />
@@ -124,312 +131,175 @@ const StatCard: FC<StatCardProps> = ({
       </div>
     </div>
     <div className="flex items-center gap-1 text-xs">
-      {change.direction === "up" ? (
-        <ArrowUp size={14} className="text-emerald-500" />
-      ) : (
-        <ArrowDown size={14} className="text-red-500" />
-      )}
-      <span
-        className={
-          change.direction === "up" ? "text-emerald-500" : "text-red-500"
-        }
-      >
-        {change.value.toFixed(1)}%
-      </span>
+      {change.direction === "up" ? <ArrowUp size={14} className="text-emerald-500" /> : <ArrowDown size={14} className="text-red-500" />}
+      <span className={change.direction === "up" ? "text-emerald-500" : "text-red-500"}>{change.value.toFixed(1)}%</span>
       <span className="text-slate-400">vs prev. period</span>
     </div>
   </div>
 );
 
-const ChartCard: FC<ChartCardProps> = ({
-  title,
-  icon: Icon,
-  children,
-  isLoading,
-}) => (
-  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
-    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-      <Icon className="text-slate-400" size={20} /> {title}
-    </h3>
-    {isLoading && (
-      <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl">
-        <Loader2 className="animate-spin text-emerald-500" size={40} />
-      </div>
-    )}
-    <div className="h-80">{children}</div>
-  </div>
-);
-
-// ✅ Fixed CustomTooltip typing
-
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: {
-    name: string;
-    value: number;
-    stroke?: string;
-    payload?: { fill?: string };
-  }[];
-  label?: string;
-}
-
 const CustomTooltip: FC<CustomTooltipProps> = ({ active, payload, label }) => {
   if (active && payload && payload.length > 0) {
-    const data = payload[0];
+    const data = payload[0].payload;
     return (
       <div className="bg-white p-3 rounded-lg shadow-lg border border-slate-200">
         <p className="font-semibold text-gray-700">{label}</p>
-        <p
-          className="text-sm"
-          style={{
-            color: data.stroke || data.payload?.fill,
-          }}
-        >
-          {`${data.name}: ${data.value.toLocaleString("en-IN")}`}
-        </p>
+        {/* This logic assumes the tooltip is only for TransactionEntry data */}
+        <p className="text-sm">{`Product: ${data.product}, Qty: ${data.quantity}, Price: ₹${data.pricePerUnit.toLocaleString("en-IN")}, Revenue: ₹${data.revenue.toLocaleString("en-IN")}`}</p>
       </div>
     );
   }
   return null;
 };
 
+// ------------------ MAIN ANALYSIS ------------------
+const INDIA_TOPO_JSON = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
-// --- MAIN ANALYSIS COMPONENT ---
 const Analysis: FC = () => {
   const [timeframe, setTimeframe] = useState<Timeframe>("30d");
-  const [loading, setLoading] = useState(false);
-
-  const handleTimeframeChange = (newTimeframe: Timeframe) => {
-    setLoading(true);
-    setTimeframe(newTimeframe);
-    setTimeout(() => setLoading(false), 500); // Simulate data fetching
-  };
+  const [selectedArea, setSelectedArea] = useState<string | null>(null);
 
   const currentStats = statsData[timeframe];
-
-  const getChange = (current: number, prev: number) => {
-    if (prev === 0) return { value: 100, direction: "up" as const };
-    const value = ((current - prev) / prev) * 100;
-    return {
-      value: Math.abs(value),
-      direction: value >= 0 ? ("up" as const) : ("down" as const),
-    };
-  };
 
   const chartData = useMemo(() => {
     const days = timeframe === "7d" ? 7 : timeframe === "30d" ? 30 : 90;
     return transactionData.slice(-days);
   }, [timeframe]);
 
+  // FIX: Added an explicit return type to match the StatCardProps['change'] type.
+  const getChange = (current: number, prev: number): { value: number; direction: "up" | "down" } => {
+    if (prev === 0) return { value: 100, direction: "up" };
+    const value = ((current - prev) / prev) * 100;
+    return { value: Math.abs(value), direction: value >= 0 ? "up" : "down" };
+  };
+
+  // Pie chart data for crop volumes
+  const cropVolumeData = useMemo(() => {
+    const map: Record<string, number> = {};
+    chartData.forEach(t => { map[t.product] = (map[t.product] || 0) + t.quantity; });
+    return Object.keys(map).map((k, i) => ({
+      name: k,
+      value: map[k],
+      color: ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"][i % 5],
+    }));
+  }, [chartData]);
+
   return (
     <div className="bg-slate-50 min-h-screen">
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* --- Header --- */}
+        {/* Header */}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Supply Chain Analysis
-            </h1>
-            <p className="mt-1 text-md text-slate-600">
-              Performance insights for your supply chain operations.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 p-1 bg-slate-200/60 rounded-full">
-            {(["7d", "30d", "90d"] as Timeframe[]).map((tf) => (
-              <button
-                key={tf}
-                onClick={() => handleTimeframeChange(tf)}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${
-                  timeframe === tf
-                    ? "bg-white text-emerald-600 shadow-sm"
-                    : "text-slate-600 hover:bg-slate-300/50"
-                }`}
-              >
-                Last {tf.replace("d", "")} Days
-              </button>
-            ))}
+            <h1 className="text-3xl font-bold text-gray-900">Supply Chain Analysis</h1>
+            <p className="mt-1 text-md text-slate-600">Performance insights for your supply chain operations.</p>
           </div>
         </header>
 
-        {/* --- Stats Cards --- */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <StatCard
-            title="Total Transactions"
-            value={currentStats.totalTransactions.value.toLocaleString("en-IN")}
-            change={getChange(
-              currentStats.totalTransactions.value,
-              currentStats.totalTransactions.prev
-            )}
-            icon={Activity}
-            color={{ bg: "bg-emerald-100", text: "text-emerald-600" }}
-          />
-          <StatCard
-            title="Active Farmers"
-            value={currentStats.activeFarmers.value.toLocaleString("en-IN")}
-            change={getChange(
-              currentStats.activeFarmers.value,
-              currentStats.activeFarmers.prev
-            )}
-            icon={Users}
-            color={{ bg: "bg-blue-100", text: "text-blue-600" }}
-          />
-          <StatCard
-            title="Distributors"
-            value={currentStats.distributors.value.toLocaleString("en-IN")}
-            change={getChange(
-              currentStats.distributors.value,
-              currentStats.distributors.prev
-            )}
-            icon={Truck}
-            color={{ bg: "bg-yellow-100", text: "text-yellow-600" }}
-          />
-          <StatCard
-            title="Retailers"
-            value={currentStats.retailers.value.toLocaleString("en-IN")}
-            change={getChange(
-              currentStats.retailers.value,
-              currentStats.retailers.prev
-            )}
-            icon={Store}
-            color={{ bg: "bg-purple-100", text: "text-purple-600" }}
-          />
+          <StatCard title="Total Transactions" value={currentStats.totalTransactions.value.toString()} change={getChange(currentStats.totalTransactions.value, currentStats.totalTransactions.prev)} icon={Activity} color={{ bg: "bg-emerald-100", text: "text-emerald-600" }} />
+          <StatCard title="Active Farmers" value={currentStats.activeFarmers.value.toString()} change={getChange(currentStats.activeFarmers.value, currentStats.activeFarmers.prev)} icon={Users} color={{ bg: "bg-blue-100", text: "text-blue-600" }} />
+          <StatCard title="Distributors" value={currentStats.distributors.value.toString()} change={getChange(currentStats.distributors.value, currentStats.distributors.prev)} icon={Truck} color={{ bg: "bg-yellow-100", text: "text-yellow-600" }} />
+          <StatCard title="Retailers" value={currentStats.retailers.value.toString()} change={getChange(currentStats.retailers.value, currentStats.retailers.prev)} icon={Store} color={{ bg: "bg-purple-100", text: "text-purple-600" }} />
         </div>
 
-        {/* --- Main Dashboard Grid --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Transactions Over Time */}
-          <div className="lg:col-span-2">
-            <ChartCard
-              title="Transactions Over Time"
-              icon={BarChart3}
-              isLoading={loading}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 5, right: 20, left: -10, bottom: 5 }}
-                >
-                  <defs>
-                    <linearGradient
-                      id="colorTransactions"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="#22c55e"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="#22c55e"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: "#64748b", fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fill: "#64748b", fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="transactions"
-                    name="Transactions"
-                    stroke="#22c55e"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorTransactions)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </ChartCard>
-          </div>
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Product Volume */}
+          {/* LEFT: Personal Transactions */}
           <div className="space-y-6">
-            <ChartCard title="Product Volume" icon={PieIcon} isLoading={loading}>
-              <ResponsiveContainer width="100%" height="100%">
+            {/* Bar chart: Quantity & Price/Unit */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><BarChart3 size={20} /> Personal Transactions</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis yAxisId="left" orientation="left" stroke="#22c55e" />
+                  <YAxis yAxisId="right" orientation="right" stroke="#3b82f6" />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="quantity" name="Quantity" fill="#22c55e" />
+                  <Bar yAxisId="right" dataKey="pricePerUnit" name="Price/Unit" fill="#3b82f6" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Pie chart: Crop volume */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><BarChart3 size={20} /> Crop Volume Distribution</h3>
+              <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={productDistribution}
+                    data={cropVolumeData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    label
                   >
-                    {productDistribution.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
+                    {cropVolumeData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
                   </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                    iconType="circle"
-                    iconSize={8}
-                    formatter={(value) => (
-                      <span className="text-slate-600">{value}</span>
-                    )}
-                  />
+                  <Tooltip />
+                  <Legend />
                 </PieChart>
               </ResponsiveContainer>
-            </ChartCard>
+            </div>
           </div>
 
-          {/* Revenue */}
-          <div className="lg:col-span-3">
-            <ChartCard
-              title="Revenue by Product (All Time)"
-              icon={BarChart3}
-              isLoading={false}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={productDistribution}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 30, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    tick={{ fill: "#64748b", fontSize: 12 }}
-                    tickFormatter={(value) => `₹${Number(value) / 100000}L`}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={100}
-                    tick={{ fill: "#64748b", fontSize: 12 }}
-                  />
-                  <Tooltip
-                    content={<CustomTooltip />}
-                    cursor={{ fill: "rgba(240, 240, 240, 0.5)" }}
-                  />
-                  <Legend
-                    formatter={(value) => (
-                      <span className="text-slate-600 capitalize">{value}</span>
-                    )}
-                  />
-                  <Bar dataKey="revenue" name="Revenue">
-                    {productDistribution.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Bar>
+          {/* RIGHT: Monthly Comparison + Map */}
+          <div className="space-y-6">
+            {/* Monthly Product Price Comparison */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <BarChart3 size={20} /> Monthly Product Price Comparison
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={comparisonData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="product" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="yourPrice" name="Your Price/Unit" fill="#22c55e" />
+                  <Bar dataKey="areaAvg" name="Area Avg Price/Unit" fill="#3b82f6" />
                 </BarChart>
               </ResponsiveContainer>
-            </ChartCard>
+            </div>
+
+
+            {/* Area-wise Map */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><BarChart3 size={20} /> Area-wise Summary (India)</h3>
+              <ComposableMap projection="geoMercator" width={400} height={400} projectionConfig={{ scale: 900, center: [82, 22] }}>
+                <Geographies geography={INDIA_TOPO_JSON}>
+                  {/* FIX: Replaced 'any' with specific types for the render prop. */}
+                  {({ geographies }: { geographies: GeoObject[] }) =>
+                    geographies.map((geo: GeoObject) => (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        onClick={() => setSelectedArea(geo.properties?.NAME_1 || "Unknown")}
+                        style={{
+                          default: { fill: "#E0E0E0", outline: "none" },
+                          hover: { fill: "#22c55e", outline: "none" },
+                          pressed: { fill: "#15803d", outline: "none" },
+                        }}
+                      />
+                    ))
+                  }
+                </Geographies>
+              </ComposableMap>
+              {selectedArea && (
+                <div className="mt-4 p-4 bg-emerald-50 rounded-lg">
+                  <p className="text-sm text-slate-600">Selected Area:</p>
+                  <h3 className="font-bold text-lg">{selectedArea}</h3>
+                  <p className="text-slate-700">Summary data for {selectedArea} (transactions, revenue, farmers, etc.)</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

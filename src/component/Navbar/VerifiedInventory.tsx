@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 
 import { useCart } from "../hooks/useCart";
-import tomatoImg from "../assets/tomato.jpeg";
 import riceImg from "../assets/rice.jpeg";
 import potatoImg from "../assets/potato.jpeg";
 import wheatImg from "../assets/wheat.jpeg";
@@ -27,16 +26,7 @@ type InventoryItem = {
 };
 
 const inventory: InventoryItem[] = [
-  {
-    id: "1",
-    name: "Nashik Tomatoes",
-    category: "Vegetable",
-    quantity: 150,
-    govtStatus: "Verified",
-    origin: "Nashik, Maharashtra",
-    image: tomatoImg,
-    price: 50,
-  },
+  
   {
     id: "2",
     name: "Basmati Rice",
